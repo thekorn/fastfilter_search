@@ -12,6 +12,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const fastfilter = b.dependency("fastfilter", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
+
     b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
 
@@ -29,6 +35,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    exe_unit_tests.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 
