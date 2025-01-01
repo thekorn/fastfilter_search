@@ -27,6 +27,10 @@
             .url = "git+https://github.com/hexops/fastfilter.git?ref=main#8b57691931798474a44ef7c2a6b9cf43dce7d20b",
             .hash = "1220608c1724fc7d1cfa7ae7ed2f1b7a5c975937aaa8ec6ae2089bfdf20a4f619138",
         },
+        .snowballstem = .{
+            .url = "git+https://github.com/thekorn/snowballstem.zig.git?ref=main#aa630b290bef15c143195c9dfde2d863775466c1",
+            .hash = "1220c228aa43287c1418a107c01d45948f57080c56fcb9db1c3b7c8c4e3b52fdb2d5",
+        },
     },
     .paths = .{
         "build.zig",

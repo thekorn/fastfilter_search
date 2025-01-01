@@ -18,6 +18,12 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
 
+    const snowballstem = b.dependency("snowballstem", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
+
     b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
 
