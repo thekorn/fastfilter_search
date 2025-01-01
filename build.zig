@@ -34,6 +34,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .test_runner = b.path("test_runner.zig"),
     });
     exe_unit_tests.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
 
