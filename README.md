@@ -1,3 +1,10 @@
+# fastfilter search
+
+## idea
+
+![fast filter search](./docs/fastfilter_search.png)
+
+
 ## references
 
  - [zg unicode handling](https://codeberg.org/atman/zg)
