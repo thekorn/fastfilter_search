@@ -31,6 +31,10 @@
             .url = "git+https://github.com/thekorn/snowballstem.zig.git?ref=main#65cf268417bf9ee102708c3004a1797121815af6",
             .hash = "1220dc83d7e78e535801cff3cc08824e3fd14373156477b861bb26de0c294029276d",
         },
+        .zg = .{
+            .url = "https://codeberg.org/atman/zg/archive/v0.13.4.tar.gz",
+            .hash = "1220fe42e39fd141c84fd7d5cf69945309bb47253033e68788f99bdfe5585fbc711a",
+        },
     },
     .paths = .{
         "build.zig",

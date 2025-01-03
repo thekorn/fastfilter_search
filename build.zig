@@ -2,8 +2,9 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-
     const optimize = b.standardOptimizeOption(.{});
+
+    const zg = b.dependency("zg", .{});
 
     const exe = b.addExecutable(.{
         .name = "fastfilter_search",
@@ -11,6 +12,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    exe.root_module.addImport("CaseData", zg.module("CaseData"));
 
     const fastfilter = b.dependency("fastfilter", .{
         .target = target,
@@ -43,6 +46,7 @@ pub fn build(b: *std.Build) void {
         .test_runner = b.path("test_runner.zig"),
     });
     exe_unit_tests.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
+    exe_unit_tests.root_module.addImport("CaseData", zg.module("CaseData"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 

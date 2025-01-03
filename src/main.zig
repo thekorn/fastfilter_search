@@ -1,7 +1,8 @@
 const std = @import("std");
+const Stemmer = @import("snowballstem");
 
 const filter = @import("filter.zig");
-const Stemmer = @import("snowballstem");
+const TokenIter = @import("TokenIter.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -12,8 +13,16 @@ pub fn main() !void {
     defer alloc.free(stemmer);
 
     std.debug.print(">>> {s}\n", .{stemmer});
+
+    var tokenIter = try TokenIter.init(alloc, "HELLO über Ölung     123      ");
+    defer tokenIter.deinit();
+
+    while (tokenIter.next()) |token| {
+        std.debug.print("---{s}---\n", .{token});
+    }
 }
 
 test {
     _ = filter;
+    _ = TokenIter;
 }
