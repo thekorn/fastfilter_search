@@ -47,6 +47,7 @@ pub fn build(b: *std.Build) void {
     });
     exe_unit_tests.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
     exe_unit_tests.root_module.addImport("CaseData", zg.module("CaseData"));
+    exe_unit_tests.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 

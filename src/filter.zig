@@ -617,6 +617,8 @@ test "filter" {
     // Super fast containment checks.
     try testing.expectEqual(true, filter.contains(2));
     try testing.expectEqual(true, filter.contains(4));
+    try testing.expectEqual(true, filter.contains(8));
+    try testing.expectEqual(false, filter.contains(18));
 
     // Fast queries.
     var results = std.ArrayListUnmanaged([]const u8){};
