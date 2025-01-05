@@ -90,11 +90,6 @@ test "index contains words" {
 
     try ti.index();
 
-    std.debug.print("contains 'Hallo'? {any}\n", .{try ti.contains("Hallo")});
-    std.debug.print("contains 'Test'? {any}\n", .{try ti.contains("test")});
-    std.debug.print("contains 'hallo'? {any}\n", .{try ti.contains("hallo")});
-    std.debug.print("contains 'boo'? {any}\n", .{try ti.contains("boo")});
-
     try std.testing.expectEqual(true, try ti.contains("Hallo"));
     try std.testing.expectEqual(true, try ti.contains("hallo"));
     try std.testing.expectEqual(true, try ti.contains("test"));
