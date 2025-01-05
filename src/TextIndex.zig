@@ -71,8 +71,8 @@ pub fn contains(self: *Self, word: []const u8) !bool {
     defer token.deinit();
 
     const t = token.next();
-    std.debug.assert(t != null);
-    std.debug.assert(token.next() == null);
+    if (t == null) return error.EmptySearchWord;
+    if (token.next() != null) return error.MoreThanOneWord;
     const s = self.stemmer.stem(t.?);
     const key = std.hash_map.hashString(s);
     return self.filter.contains(key);
@@ -94,4 +94,20 @@ test "index contains words" {
     try std.testing.expectEqual(true, try ti.contains("hallo"));
     try std.testing.expectEqual(true, try ti.contains("test"));
     try std.testing.expectEqual(false, try ti.contains("boo"));
+}
+
+test "invalid contains words" {
+    var ti = try Self.init(std.testing.allocator, .{});
+    defer ti.deinit();
+
+    const p1 = try ti.insert("Hallo welt");
+    defer std.testing.allocator.destroy(p1);
+
+    const p2 = try ti.insert("dies ist ein test");
+    defer std.testing.allocator.destroy(p2);
+
+    try ti.index();
+
+    try std.testing.expectError(error.MoreThanOneWord, ti.contains("Hallo googog"));
+    try std.testing.expectError(error.EmptySearchWord, ti.contains("        "));
 }
