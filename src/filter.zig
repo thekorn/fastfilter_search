@@ -421,32 +421,32 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
         pub fn serialize(filter: *const Self, stream: anytype) !void {
             // Constants
             const version = 1;
-            try stream.writeIntLittle(u16, version);
-            try stream.writeIntLittle(u64, filter.total_keys_estimate);
-            try stream.writeIntLittle(u16, options.filter_bit_size);
-            try stream.writeIntLittle(u64, options.mid_layer_divisions);
+            try stream.writeInt(u16, version, .little);
+            try stream.writeInt(u64, filter.total_keys_estimate, .little);
+            try stream.writeInt(u16, options.filter_bit_size, .little);
+            try stream.writeInt(u64, options.mid_layer_divisions, .little);
 
             // Outer layer
-            try stream.writeIntLittle(u64, filter.keys);
+            try stream.writeInt(u64, filter.keys, .little);
             try serializeFilter(stream, &filter.outer_layer.?);
-            for (filter.mid_layer) |*mid_layer| {
+            for (&filter.mid_layer) |*mid_layer| {
                 // Mid layer
-                try stream.writeIntLittle(u64, mid_layer.keys);
+                try stream.writeInt(u64, mid_layer.keys, .little);
                 try serializeFilter(stream, &mid_layer.filter.?);
-                try stream.writeIntLittle(u32, @intCast(mid_layer.inner_layers.len));
+                try stream.writeInt(u32, @intCast(mid_layer.inner_layers.len), .little);
 
                 var i: usize = 0;
                 while (i < mid_layer.inner_layers.len) : (i += 1) {
                     // Inner layer
                     var inner_layer = mid_layer.inner_layers.get(i);
-                    try stream.writeIntLittle(u64, inner_layer.keys);
+                    try stream.writeInt(u64, inner_layer.keys, .little);
                     try serializeFilter(stream, &inner_layer.filter.?);
 
                     // TODO: generic result serialization
                     if (Result == u64) {
-                        try stream.writeIntLittle(u64, inner_layer.result);
+                        try stream.writeInt(u64, inner_layer.result, .little);
                     } else if (Result == []const u8) {
-                        try stream.writeIntLittle(u32, @intCast(inner_layer.result.len));
+                        try stream.writeInt(u32, @intCast(inner_layer.result.len), .little);
                         try stream.writeAll(inner_layer.result);
                     } else unreachable;
                 }
@@ -454,12 +454,12 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
         }
 
         fn serializeFilter(stream: anytype, filter: *const BinaryFuseFilter) !void {
-            try stream.writeIntLittle(u64, filter.seed);
-            try stream.writeIntLittle(u32, filter.segment_length);
-            try stream.writeIntLittle(u32, filter.segment_length_mask);
-            try stream.writeIntLittle(u32, filter.segment_count);
-            try stream.writeIntLittle(u32, filter.segment_count_length);
-            try stream.writeIntLittle(u32, @intCast(filter.fingerprints.len));
+            try stream.writeInt(u64, filter.seed, .little);
+            try stream.writeInt(u32, filter.segment_length, .little);
+            try stream.writeInt(u32, filter.segment_length_mask, .little);
+            try stream.writeInt(u32, filter.segment_count, .little);
+            try stream.writeInt(u32, filter.segment_count_length, .little);
+            try stream.writeInt(u32, @intCast(filter.fingerprints.len), .little);
 
             const F = std.meta.Elem(@TypeOf(filter.fingerprints));
             const fingerprint_bytes: []const u8 = filter.fingerprints.ptr[0 .. filter.fingerprints.len * @sizeOf(F)];
@@ -468,9 +468,10 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
 
         pub fn readFile(
             allocator: Allocator,
+            dir: std.fs.Dir,
             file_path: []const u8,
         ) !Self {
-            var file = try std.fs.cwd().openFile(file_path, .{ .mode = .read_only });
+            var file = try dir.openFile(file_path, .{ .mode = .read_only });
             defer file.close();
 
             var buf_stream = std.io.bufferedReader(file.reader());
@@ -481,39 +482,39 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
             // TODO: if reads here fail, filter allocations would leak.
 
             // Constants
-            const version = try stream.readIntLittle(u16);
+            const version = try stream.readInt(u16, .little);
             std.debug.assert(version == 1);
-            const total_keys_estimate = try stream.readIntLittle(u64);
-            const filter_bit_size = try stream.readIntLittle(u16);
-            const mid_layer_divisions = try stream.readIntLittle(u64);
+            const total_keys_estimate = try stream.readInt(u64, .little);
+            const filter_bit_size = try stream.readInt(u16, .little);
+            const mid_layer_divisions = try stream.readInt(u64, .little);
             std.debug.assert(mid_layer_divisions == options.mid_layer_divisions);
             std.debug.assert(filter_bit_size == options.filter_bit_size);
 
             // Outer layer
-            const keys = try stream.readIntLittle(u64);
+            const keys = try stream.readInt(u64, .little);
             const outer_layer = try deserializeFilter(allocator, stream);
 
             var mid_layer: [options.mid_layer_divisions]MidLayer = undefined;
             var division: usize = 0;
             while (division < options.mid_layer_divisions) : (division += 1) {
                 // Mid layer
-                const mid_layer_keys = try stream.readIntLittle(u64);
+                const mid_layer_keys = try stream.readInt(u64, .little);
                 const mid_layer_filter = try deserializeFilter(allocator, stream);
-                const inner_layers_len = try stream.readIntLittle(u32);
+                const inner_layers_len = try stream.readInt(u32, .little);
 
                 var inner_layers = std.MultiArrayList(InnerLayer){};
                 try inner_layers.resize(allocator, inner_layers_len);
                 var i: usize = 0;
                 while (i < inner_layers.len) : (i += 1) {
                     // Inner Layer
-                    const inner_layer_keys = try stream.readIntLittle(u64);
+                    const inner_layer_keys = try stream.readInt(u64, .little);
                     const inner_layer_filter = try deserializeFilter(allocator, stream);
 
                     // TODO: generic result deserialization
                     const result = if (Result == u64) blk: {
-                        break :blk try stream.readIntLittle(u64);
+                        break :blk try stream.readInt(u64, .little);
                     } else if (Result == []const u8) blk: {
-                        const data_len = try stream.readIntLittle(u32);
+                        const data_len = try stream.readInt(u32, .little);
                         const data = try allocator.alloc(u8, data_len);
                         const read_bytes = try stream.readAll(data);
                         if (read_bytes < data.len) {
@@ -547,12 +548,12 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
         }
 
         fn deserializeFilter(allocator: Allocator, stream: anytype) !BinaryFuseFilter {
-            const seed = try stream.readIntLittle(u64);
-            const segment_length = try stream.readIntLittle(u32);
-            const segment_length_mask = try stream.readIntLittle(u32);
-            const segment_count = try stream.readIntLittle(u32);
-            const segment_count_length = try stream.readIntLittle(u32);
-            const fingerprints_len = try stream.readIntLittle(u32);
+            const seed = try stream.readInt(u64, .little);
+            const segment_length = try stream.readInt(u32, .little);
+            const segment_length_mask = try stream.readInt(u32, .little);
+            const segment_count = try stream.readInt(u32, .little);
+            const segment_count_length = try stream.readInt(u32, .little);
+            const fingerprints_len = try stream.readInt(u32, .little);
 
             const fingerprints = try allocator.alloc(FilterType, fingerprints_len);
             const fingerprint_bytes: []u8 = fingerprints.ptr[0 .. fingerprints.len * @sizeOf(FilterType)];

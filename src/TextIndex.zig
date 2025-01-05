@@ -120,6 +120,20 @@ pub fn query(self: *Self, term: []const u8, results: *std.ArrayListUnmanaged([]c
     }
 }
 
+pub fn save(self: *Self, dir: std.fs.Dir, filename: []const u8) !void {
+    //TOD: save options as well
+    return self.filter.writeFile(self.alloc, dir, filename);
+}
+
+pub fn load(alloc: std.mem.Allocator, dir: std.fs.Dir, filename: []const u8, options: TextOptions) !Self {
+    return .{
+        .alloc = alloc,
+        .filter = try TextFilter.readFile(alloc, dir, filename),
+        .stemmer = try Stemmer.init(options.language, options.charenc),
+        .cache = std.ArrayListUnmanaged([]u64){},
+    };
+}
+
 test "index contains words" {
     var ti = try Self.init(std.testing.allocator, .{});
     defer ti.deinit();
@@ -197,4 +211,30 @@ test "simple AND query" {
     const num = try ti.query("Hallo test", &results, .{ .query_type = .All });
 
     try std.testing.expectEqual(1, num);
+}
+
+test "save and load file" {
+    var ti = try Self.init(std.testing.allocator, .{});
+    defer ti.deinit();
+
+    const p1 = try ti.insert("Hallo welt");
+    defer std.testing.allocator.destroy(p1);
+
+    const p2 = try ti.insert("dies ist ein test");
+    defer std.testing.allocator.destroy(p2);
+
+    try ti.index();
+
+    var dir = std.testing.tmpDir(.{});
+    defer dir.cleanup();
+
+    try ti.save(dir.dir, "test.idx");
+
+    var tl = try Self.load(std.testing.allocator, dir.dir, "test.idx", .{});
+    defer tl.deinit();
+
+    try std.testing.expectEqual(true, try tl.contains("Hallo"));
+    try std.testing.expectEqual(true, try tl.contains("hallo"));
+    try std.testing.expectEqual(true, try tl.contains("test"));
+    try std.testing.expectEqual(false, try tl.contains("boo"));
 }
