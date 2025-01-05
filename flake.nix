@@ -21,7 +21,7 @@
       in {
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
-            zig-overlay.packages.${system}."master-2024-12-01"
+            zig-overlay.packages.${system}."master-2024-12-31"
             zls-master.packages.${system}.default
 
             lldb
