@@ -1,9 +1,30 @@
 # fastfilter search
 
+![ci workflow](https://github.com/thekorn/fastfilter_search/actions/workflows/ci.yaml/badge.svg)
+
+**NOTE**: this is a work in progress, and not yet ready for use.
+
 ## idea
 
+This is - at this point a learning project for:
+
+  - zig
+  - wasm, and running wasm in the browser
+
+Idea implement text search in the browser using wasm and zig. See [references](#references) for similar approaches..
 ![fast filter search](./docs/fastfilter_search.png)
 
+## Requirements
+
+- zig >= 0.14
+
+## Tests
+
+Using `nix` tests can be run like
+
+```bash
+$ nix develop -c zig build test --summary all
+```
 
 ## references
 
