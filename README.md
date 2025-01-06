@@ -26,6 +26,18 @@ Using `nix` tests can be run like
 $ nix develop -c zig build test --summary all
 ```
 
+## building
+
+```bash
+$ zig build
+```
+
+or - using the `ReleaseSmall` optimization level
+
+```bash
+$ zig build -Doptimize=ReleaseSmall
+```
+
 ## TODO
 
 - [ ] fix memory leak in loading/deserializing the filter

@@ -67,8 +67,11 @@ pub fn build(b: *std.Build) void {
 
     wasm.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
 
-    b.installArtifact(wasm);
-    const wasm_step = b.step("wasm", "wasm");
+    //b.installArtifact(wasm);
+    //const wasm_step = b.step("wasm", "wasm");
 
-    wasm_step.dependOn(b.getInstallStep());
+    //wasm_step.dependOn(b.getInstallStep());
+    //var wasm_install_step = b.addInstallFileWithDir(wasm.getEmittedBin(), .prefix, "../www/search.wasm").step;
+
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(wasm.getEmittedBin(), .prefix, "../www/search.wasm").step);
 }
