@@ -53,4 +53,22 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_exe_unit_tests.step);
+
+    const wasm = b.addExecutable(.{
+        .name = "search",
+        .root_source_file = b.path("src/wasm.zig"),
+        .target = b.resolveTargetQuery(std.Target.Query.parse(
+            .{ .arch_os_abi = "wasm32-freestanding" },
+        ) catch unreachable),
+        .optimize = optimize,
+    });
+    wasm.entry = .disabled;
+    wasm.rdynamic = true;
+
+    wasm.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
+
+    b.installArtifact(wasm);
+    const wasm_step = b.step("wasm", "wasm");
+
+    wasm_step.dependOn(b.getInstallStep());
 }

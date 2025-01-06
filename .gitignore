@@ -4,3 +4,5 @@
 zig-out/
 
 *.idx
+*.wasm
+*.wasm.o
