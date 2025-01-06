@@ -5,5 +5,5 @@
 
 set -e
 
-zig build
+zig build -Doptimize=ReleaseSmall
 cp ./zig-out/bin/search.wasm ./www/search.wasm
