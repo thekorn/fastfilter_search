@@ -25,6 +25,7 @@
             zls-master.packages.${system}.default
 
             lldb
+            wabt
             hyperfine
           ];
         };

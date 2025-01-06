@@ -48,3 +48,9 @@ pub export fn listStemmer() void {
 
     print(">>> {s}\n", .{stemmer});
 }
+
+//FIXME: somehow main is not stripped by build, so we need this entry point
+// if we manage to disable the entry point, remove this function
+pub fn main() !void {
+    print(">>> HELLO MAIN\n", .{});
+}
