@@ -57,8 +57,25 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, ret_
 pub export var global_chunk: [16384]u8 = undefined;
 
 pub export fn pushTextIndexData(len: usize) void {
+    global.text_index_data.clearRetainingCapacity();
     global.text_index_data.appendSlice(global_chunk[0..len]) catch unreachable;
     print(">>> we loaded {d} bytes of index data", .{len});
+}
+
+pub export fn search(len: usize) void {
+    print(">>> we got search string {d}: {s}", .{ len, global_chunk[0..len] });
+
+    var results = std.ArrayListUnmanaged([]const u8){};
+    defer results.deinit(std.heap.wasm_allocator);
+    _ = global.text_index.query(
+        global_chunk[0..len],
+        &results,
+        .{},
+    ) catch |e| {
+        print("Error: {any}\n", .{e});
+        return;
+    };
+    print(">>> we got {d} results", .{results.items.len});
 }
 
 const GlobalState = struct {
@@ -66,9 +83,7 @@ const GlobalState = struct {
     text_index_data: std.ArrayList(u8) = std.ArrayList(u8).init(std.heap.wasm_allocator),
     gpa: std.heap.GeneralPurposeAllocator(.{
         .MutexType = std.Thread.Mutex,
-    }) = std.heap.GeneralPurposeAllocator(.{
-        .MutexType = std.Thread.Mutex,
-    }){},
+    }) = .{},
 };
 
 var global = GlobalState{};

@@ -33,6 +33,18 @@ async function loadDataFromServer(uri, mod, pushFn) {
   }
 }
 
+function encodeString(mod, string) {
+  const buffer = new TextEncoder().encode(string);
+  const slice = new Uint8Array(
+    mod.instance.exports.memory.buffer,
+    mod.instance.exports.global_chunk.value,
+    buffer.length + 1,
+  );
+  slice.set(buffer);
+  slice[buffer.length] = 0;
+  return buffer.length;
+}
+
 async function loadTextIndex(mod) {
   await loadDataFromServer(
     "search.idx",
@@ -64,6 +76,13 @@ async function init() {
 
   await loadTextIndex(mod);
   mod.instance.exports.init();
+
+  const search_button = document.getElementById("search_button");
+  const search_input = document.getElementById("search_input");
+  search_button.onclick = () => {
+    console.log("click", search_input.value);
+    mod.instance.exports.search(encodeString(mod, search_input.value));
+  };
 }
 
 window.onload = init;
