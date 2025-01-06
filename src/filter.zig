@@ -418,6 +418,19 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
             try baf.finish();
         }
 
+        pub fn writeBuffer(
+            filter: *const Self,
+            allocator: Allocator,
+        ) ![]u8 {
+            var out_buffer = std.ArrayList(u8).init(allocator);
+            defer out_buffer.deinit();
+
+            const writer = out_buffer.writer();
+
+            try filter.serialize(writer);
+            return out_buffer.toOwnedSlice();
+        }
+
         pub fn serialize(filter: *const Self, stream: anytype) !void {
             // Constants
             const version = 1;
@@ -475,6 +488,14 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
             defer file.close();
 
             var buf_stream = std.io.bufferedReader(file.reader());
+            return try deserialize(allocator, buf_stream.reader());
+        }
+
+        pub fn readBuffer(
+            allocator: Allocator,
+            buf: []u8,
+        ) !Self {
+            var buf_stream = std.io.fixedBufferStream(buf);
             return try deserialize(allocator, buf_stream.reader());
         }
 

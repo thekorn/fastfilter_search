@@ -125,10 +125,24 @@ pub fn save(self: *Self, dir: std.fs.Dir, filename: []const u8) !void {
     return self.filter.writeFile(self.alloc, dir, filename);
 }
 
+pub fn saves(self: *Self) ![]u8 {
+    //TOD: save options as well
+    return self.filter.writeBuffer(self.alloc);
+}
+
 pub fn load(alloc: std.mem.Allocator, dir: std.fs.Dir, filename: []const u8, options: TextOptions) !Self {
     return .{
         .alloc = alloc,
         .filter = try TextFilter.readFile(alloc, dir, filename),
+        .stemmer = try Stemmer.init(options.language, options.charenc),
+        .cache = std.ArrayListUnmanaged([]u64){},
+    };
+}
+
+pub fn loads(alloc: std.mem.Allocator, buf: []u8, options: TextOptions) !Self {
+    return .{
+        .alloc = alloc,
+        .filter = try TextFilter.readBuffer(alloc, buf),
         .stemmer = try Stemmer.init(options.language, options.charenc),
         .cache = std.ArrayListUnmanaged([]u64){},
     };
@@ -231,6 +245,31 @@ test "save and load file" {
     try ti.save(dir.dir, "test.idx");
 
     var tl = try Self.load(std.testing.allocator, dir.dir, "test.idx", .{});
+    defer tl.deinit();
+
+    try std.testing.expectEqual(true, try tl.contains("Hallo"));
+    try std.testing.expectEqual(true, try tl.contains("hallo"));
+    try std.testing.expectEqual(true, try tl.contains("test"));
+    try std.testing.expectEqual(false, try tl.contains("boo"));
+}
+
+test "dump and load buffer" {
+    var ti = try Self.init(std.testing.allocator, .{});
+    defer ti.deinit();
+
+    const p1 = try ti.insert("Hallo welt");
+    defer std.testing.allocator.destroy(p1);
+
+    const p2 = try ti.insert("dies ist ein test");
+    defer std.testing.allocator.destroy(p2);
+
+    try ti.index();
+
+    const dump = try ti.saves();
+    defer std.testing.allocator.free(dump);
+    try std.testing.expectEqual(651, dump.len);
+
+    var tl = try Self.loads(std.testing.allocator, dump, .{});
     defer tl.deinit();
 
     try std.testing.expectEqual(true, try tl.contains("Hallo"));
