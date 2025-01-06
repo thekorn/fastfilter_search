@@ -26,6 +26,11 @@ Using `nix` tests can be run like
 $ nix develop -c zig build test --summary all
 ```
 
+## TODO
+
+- [ ] fix memory leak in loading/deserializing the filter
+- [ ] implement stopword filtering
+
 ## references
 
  - [zg unicode handling](https://codeberg.org/atman/zg)
