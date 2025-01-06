@@ -86,10 +86,10 @@ const Options = struct {
 pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterator: type) type {
     return struct {
         /// The original estimated number of keys in this filter.
-        total_keys_estimate: usize,
+        total_keys_estimate: u64,
 
         /// Total number of keys within this filter.
-        keys: usize = 0,
+        keys: u64 = 0,
 
         /// null until .index() is invoked.
         outer_layer: ?BinaryFuseFilter = null,
@@ -101,13 +101,13 @@ pub fn Filter(comptime options: Options, comptime Result: type, comptime Iterato
             filter: ?BinaryFuseFilter = null,
 
             /// Total number of keys within this layer.
-            keys: usize = 0,
+            keys: u64 = 0,
             inner_layers: std.MultiArrayList(InnerLayer),
         };
 
         pub const InnerLayer = struct {
             /// Total number of keys within the inner layer.
-            keys: usize = 0,
+            keys: u64 = 0,
 
             /// null until .index() is invoked.
             filter: ?BinaryFuseFilter = null,
