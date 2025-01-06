@@ -2,6 +2,15 @@ const std = @import("std");
 const Stemmer = @import("snowballstem");
 const TextIndex = @import("TextIndex.zig");
 
+const builtin = @import("builtin");
+
+// trace logs that are removed from Release builds
+pub inline fn trace(fmt: []const u8, args: anytype) void {
+    if (builtin.mode != .ReleaseFast and builtin.mode != .ReleaseSmall) {
+        print(fmt, args);
+    }
+}
+
 fn loadTextIndex(alloc: std.mem.Allocator, buf: []u8, options: anytype) !*TextIndex {
     const ret = try alloc.create(TextIndex);
     errdefer alloc.destroy(ret);
@@ -94,18 +103,18 @@ const alloc_align = 16;
 const alloc_metadata_len = std.mem.alignForward(usize, alloc_align, @sizeOf(usize));
 
 pub export fn malloc(size: usize) callconv(.C) ?[*]align(alloc_align) u8 {
-    print("malloc {}", .{size});
+    trace("malloc {}", .{size});
     std.debug.assert(size > 0); // TODO: what should we do in this case?
     const full_len = alloc_metadata_len + size;
     const buf = global.gpa.allocator().alignedAlloc(u8, alloc_align, full_len) catch |err| switch (err) {
         error.OutOfMemory => {
-            print("malloc return null", .{});
+            trace("malloc return null", .{});
             return null;
         },
     };
     @as(*usize, @ptrCast(buf)).* = full_len;
     const result = @as([*]align(alloc_align) u8, @ptrFromInt(@intFromPtr(buf.ptr) + alloc_metadata_len));
-    print("malloc return {*}", .{result});
+    trace("malloc return {*}", .{result});
     return result;
 }
 
@@ -116,10 +125,10 @@ fn getGpaBuf(ptr: [*]u8) []align(alloc_align) u8 {
 }
 
 export fn realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callconv(.C) ?[*]align(alloc_align) u8 {
-    print("realloc {*} {}", .{ ptr, size });
+    trace("realloc {*} {}", .{ ptr, size });
     const gpa_buf = getGpaBuf(ptr orelse {
         const result = malloc(size);
-        print("realloc return {*} (from malloc)", .{result});
+        trace("realloc return {*} (from malloc)", .{result});
         return result;
     });
     if (size == 0) {
@@ -130,7 +139,7 @@ export fn realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callconv(.C) ?[*]
     const gpa_size = alloc_metadata_len + size;
     if (global.gpa.allocator().rawResize(gpa_buf, std.math.log2(alloc_align), gpa_size, @returnAddress())) {
         @as(*usize, @ptrCast(gpa_buf.ptr)).* = gpa_size;
-        print("realloc return {*}", .{ptr});
+        trace("realloc return {*}", .{ptr});
         return ptr;
     }
 
@@ -140,13 +149,13 @@ export fn realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callconv(.C) ?[*]
         @returnAddress(),
     ) catch |e| switch (e) {
         error.OutOfMemory => {
-            print("realloc out-of-mem from {} to {}", .{ gpa_buf.len, gpa_size });
+            trace("realloc out-of-mem from {} to {}", .{ gpa_buf.len, gpa_size });
             return null;
         },
     };
     @as(*usize, @ptrCast(new_buf.ptr)).* = gpa_size;
     const result = @as([*]align(alloc_align) u8, @ptrFromInt(@intFromPtr(new_buf.ptr) + alloc_metadata_len));
-    print("realloc return {*}", .{result});
+    trace("realloc return {*}", .{result});
     return result;
 }
 
@@ -162,7 +171,7 @@ export fn calloc(nmemb: usize, size: usize) callconv(.C) ?[*]align(alloc_align) 
 }
 
 pub export fn free(ptr: ?[*]align(alloc_align) u8) callconv(.C) void {
-    print("free {*}", .{ptr});
+    trace("free {*}", .{ptr});
     const p = ptr orelse return;
     global.gpa.allocator().free(getGpaBuf(p));
 }
