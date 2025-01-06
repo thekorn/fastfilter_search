@@ -1,10 +1,29 @@
 const std = @import("std");
 
+fn link(
+    root_module: *std.Build.Module,
+    fastfilter: *std.Build.Dependency,
+    zg: *std.Build.Dependency,
+    snowballstem: *std.Build.Dependency,
+) void {
+    root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
+    root_module.addImport("CaseData", zg.module("CaseData"));
+    root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     const zg = b.dependency("zg", .{});
+    const fastfilter = b.dependency("fastfilter", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const snowballstem = b.dependency("snowballstem", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     const exe = b.addExecutable(.{
         .name = "fastfilter_search",
@@ -12,20 +31,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    exe.root_module.addImport("CaseData", zg.module("CaseData"));
-
-    const fastfilter = b.dependency("fastfilter", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
-
-    const snowballstem = b.dependency("snowballstem", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
+    link(&exe.root_module, fastfilter, zg, snowballstem);
 
     b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
@@ -45,9 +51,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .test_runner = b.path("test_runner.zig"),
     });
-    exe_unit_tests.root_module.addImport("fastfilter", fastfilter.module("fastfilter"));
-    exe_unit_tests.root_module.addImport("CaseData", zg.module("CaseData"));
-    exe_unit_tests.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
+    link(&exe_unit_tests.root_module, fastfilter, zg, snowballstem);
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 
@@ -64,14 +68,20 @@ pub fn build(b: *std.Build) void {
     });
     wasm.entry = .disabled;
     wasm.rdynamic = true;
-
-    wasm.root_module.addImport("snowballstem", snowballstem.module("snowballstem"));
-
-    //b.installArtifact(wasm);
-    //const wasm_step = b.step("wasm", "wasm");
-
-    //wasm_step.dependOn(b.getInstallStep());
-    //var wasm_install_step = b.addInstallFileWithDir(wasm.getEmittedBin(), .prefix, "../www/search.wasm").step;
+    link(&wasm.root_module, fastfilter, zg, snowballstem);
 
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(wasm.getEmittedBin(), .prefix, "../www/search.wasm").step);
+
+    const create_index_tool = b.addExecutable(.{
+        .name = "create_index",
+        .root_source_file = b.path("src/create_index.zig"),
+        .target = b.host,
+    });
+    link(&create_index_tool.root_module, fastfilter, zg, snowballstem);
+
+    const create_index_tool_step = b.addRunArtifact(create_index_tool);
+    create_index_tool_step.addArg("--output-file");
+    const output = create_index_tool_step.addOutputFileArg("search.idx");
+
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(output, .prefix, "../www/search.idx").step);
 }
