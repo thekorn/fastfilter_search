@@ -38,6 +38,19 @@ pub fn main() !void {
     std.debug.print("contains 'Test'? {any}\n", .{try ti.contains("test")});
     std.debug.print("contains 'hallo'? {any}\n", .{try ti.contains("hallo")});
     std.debug.print("contains 'boo'? {any}\n", .{try ti.contains("boo")});
+
+    var dir = std.testing.tmpDir(.{});
+    defer dir.cleanup();
+
+    try ti.save(std.fs.cwd(), "test.idx");
+
+    var tl = try TextIndex.load(alloc, std.fs.cwd(), "test.idx", .{});
+    defer tl.deinit();
+
+    std.debug.print("contains 'Hallo'? {any}\n", .{try tl.contains("Hallo")});
+    std.debug.print("contains 'Test'? {any}\n", .{try tl.contains("test")});
+    std.debug.print("contains 'hallo'? {any}\n", .{try tl.contains("hallo")});
+    std.debug.print("contains 'boo'? {any}\n", .{try tl.contains("boo")});
 }
 
 test {
