@@ -3,8 +3,13 @@ class WasmHandler {
     this.memory = null;
   }
 
-  logWasm(s, len) {
-    const buf = new Uint8Array(this.memory.buffer, s, len);
+  /**
+   * @param {string} len
+   * @param {number} offset
+   */
+  logWasm(offset, len) {
+    /** @type {ArrayBuffer} */
+    const buf = new Uint8Array(this.memory.buffer, offset, len);
     if (len === 0) {
       return;
     }
@@ -12,6 +17,11 @@ class WasmHandler {
   }
 }
 
+/**
+ * @param {WebAssembly.WebAssemblyInstantiatedSource} mod
+ * @param {string} uri
+ * @param {(len: number) => void} pushFn
+ */
 async function loadDataFromServer(uri, mod, pushFn) {
   const data_response = await fetch(uri);
   const data_reader = data_response.body.getReader({
@@ -33,6 +43,10 @@ async function loadDataFromServer(uri, mod, pushFn) {
   }
 }
 
+/**
+ * @param {WebAssembly.WebAssemblyInstantiatedSource} mod
+ * @param {string} string
+ */
 function encodeString(mod, string) {
   const buffer = new TextEncoder().encode(string);
   const slice = new Uint8Array(
@@ -45,6 +59,9 @@ function encodeString(mod, string) {
   return buffer.length;
 }
 
+/**
+ * @param {WebAssembly.WebAssemblyInstantiatedSource} mod
+ */
 async function loadTextIndex(mod) {
   await loadDataFromServer(
     "search.idx",
@@ -53,6 +70,9 @@ async function loadTextIndex(mod) {
   );
 }
 
+/**
+ * @param {WasmHandler} wasm_handlers
+ */
 async function instantiateWasmModule(wasm_handlers) {
   const wasmEnv = {
     env: {
@@ -77,7 +97,9 @@ async function init() {
   await loadTextIndex(mod);
   mod.instance.exports.init();
 
+  /** @type {HTMLButtonElement} */
   const search_button = document.getElementById("search_button");
+  /** @type {HTMLInputElement} */
   const search_input = document.getElementById("search_input");
   search_button.onclick = () => {
     console.log("click", search_input.value);
